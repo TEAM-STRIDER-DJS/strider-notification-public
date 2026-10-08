@@ -1,0 +1,54 @@
+server:
+  port: 8006
+
+spring:
+  application:
+    name: strider-notification
+
+  profiles:
+    include: secret  # DB 비밀번호, FCM 서비스 계정 키 등 민감 정보는 application-secret.yml로 분리
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/strider?currentSchema=notification}
+    username: ${DB_USERNAME:strider}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+    database: postgresql
+    hibernate:
+      # 개발 중에는 update, 프로덕션에서는 validate 로 변경
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: notification
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+    consumer:
+      group-id: strider-notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+    listener:
+      ack-mode: manual
+
+firebase:
+  credentials: ${FIREBASE_CREDENTIALS_JSON}
+
+logging:
+  level:
+    root: INFO
+    com.strider: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
